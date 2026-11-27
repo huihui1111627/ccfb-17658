@@ -1,0 +1,245 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>裸金属装机仿真与调度控制台</title>
+<style>
+:root{
+  --bg:#0b1220; --panel:#111a2e; --panel2:#0f1830; --line:#22304f; --text:#e7eefc; --muted:#8fa3c8;
+  --blue:#5aa7ff; --cyan:#39d0d8; --green:#35d07f; --yellow:#f6c453; --orange:#ff9f43; --red:#ff5d6c;
+  --purple:#a78bfa; --shadow:0 18px 50px rgba(0,0,0,.35);
+}
+*{box-sizing:border-box} body{margin:0;background:linear-gradient(180deg,#0a1020,#0b1220 240px);color:var(--text);font:14px/1.45 -apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif}
+a{color:var(--blue)} header{padding:18px 26px 12px;border-bottom:1px solid var(--line);background:rgba(10,16,32,.86);position:sticky;top:0;z-index:20;backdrop-filter:blur(10px)}
+h1{font-size:20px;margin:0 0 4px}.sub{color:var(--muted);font-size:13px}.head-row{display:flex;justify-content:space-between;gap:16px;align-items:center;flex-wrap:wrap}
+nav{display:flex;gap:6px;margin-top:14px;flex-wrap:wrap}.tab{border:1px solid var(--line);background:#0e1730;color:var(--muted);padding:8px 13px;border-radius:999px;cursor:pointer;font-weight:600}.tab.active{color:#06101f;background:linear-gradient(135deg,#7cc0ff,#47e0d4);border-color:transparent}
+main{padding:20px 26px 60px;max-width:1680px;margin:0 auto}.page{display:none}.page.active{display:block}
+.grid{display:grid;gap:14px}.kpis{grid-template-columns:repeat(7,minmax(120px,1fr));margin-bottom:14px}.card{background:linear-gradient(180deg,rgba(255,255,255,.025),rgba(255,255,255,0)),var(--panel);border:1px solid var(--line);border-radius:14px;padding:15px;box-shadow:var(--shadow)}
+.kpi .label{color:var(--muted);font-size:12px}.kpi .value{font-size:26px;font-weight:800;margin-top:4px;font-variant-numeric:tabular-nums}.kpi .hint{color:var(--muted);font-size:12px;margin-top:3px}
+.good{color:var(--green)}.bad{color:var(--red)}.warn{color:var(--yellow)}.orange{color:var(--orange)}.blue{color:var(--blue)}.cyan{color:var(--cyan)}.purple{color:var(--purple)}
+.row2{grid-template-columns:1.35fr .85fr;align-items:start}.row3{grid-template-columns:repeat(3,1fr)}.section-title{font-size:15px;font-weight:800;margin:0 0 12px;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.pipeline{display:grid;grid-template-columns:repeat(16,minmax(105px,1fr));gap:8px;overflow-x:auto;padding-bottom:6px}.stage{border:1px solid var(--line);background:var(--panel2);border-radius:11px;padding:10px;min-height:74px}.stage .n{font-size:21px;font-weight:800}.stage .l{color:var(--muted);font-size:12px;margin-top:3px}.stage.running{border-color:rgba(90,167,255,.8);box-shadow:inset 0 0 0 1px rgba(90,167,255,.25)}.stage.bad{border-color:rgba(255,93,108,.65)}
+.bar-row{display:grid;grid-template-columns:210px 1fr 54px;gap:10px;align-items:center;margin:8px 0}.bar-label{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bar{height:10px;border-radius:999px;background:#182442;overflow:hidden}.bar > i{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--blue),var(--cyan))}.bar-num{text-align:right;font-variant-numeric:tabular-nums;color:var(--muted)}
+.controls{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.btn,.select,input{border:1px solid var(--line);background:#0e1730;color:var(--text);border-radius:9px;padding:8px 11px;font-size:13px}.btn{cursor:pointer;font-weight:700}.btn.primary{background:linear-gradient(135deg,#3b82f6,#22d3ee);color:#06101f;border:0}.btn.danger{background:rgba(255,93,108,.16);border-color:rgba(255,93,108,.5);color:#ffd7db}.btn:hover{filter:brightness(1.12)}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 12px}.filters input{min-width:240px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:13px}table{border-collapse:collapse;width:100%;font-size:13px}th,td{padding:9px 10px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle;white-space:nowrap}th{position:sticky;top:0;background:#131e38;color:#c8d6f4;z-index:2;font-size:12px}tr:hover td{background:rgba(90,167,255,.07)}
+.badge{display:inline-flex;align-items:center;gap:5px;border-radius:999px;padding:2px 8px;font-size:12px;font-weight:700;border:1px solid currentColor}.badge.success{color:var(--green);background:rgba(53,208,127,.1)}.badge.blocked{color:var(--yellow);background:rgba(246,196,83,.1)}.badge.failed{color:var(--red);background:rgba(255,93,108,.1)}.badge.running,.badge.pending,.badge.retrying{color:var(--blue);background:rgba(90,167,255,.1)}.badge.retrying{color:var(--orange)}
+.mini-progress{width:90px;height:6px;background:#1b294a;border-radius:99px;overflow:hidden;display:inline-block;vertical-align:middle}.mini-progress i{display:block;height:100%;background:var(--cyan)}
+.drawer-mask{position:fixed;inset:0;background:rgba(2,6,16,.58);z-index:40;display:none}.drawer{position:fixed;top:0;right:0;height:100vh;width:min(760px,94vw);background:#0e1730;border-left:1px solid var(--line);z-index:41;transform:translateX(105%);transition:.22s ease;display:flex;flex-direction:column;box-shadow:var(--shadow)}.drawer.open{transform:none}.drawer-head{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;gap:12px}.drawer-body{overflow:auto;padding:18px 20px 40px}.close{cursor:pointer;border:1px solid var(--line);background:#131e38;border-radius:8px;color:var(--text);padding:5px 10px}
+.kv{display:grid;grid-template-columns:130px 1fr;gap:6px 12px;margin:10px 0}.kv .k{color:var(--muted)}.timeline{margin-top:14px;border-left:2px solid var(--line);padding-left:16px}.log{position:relative;margin:0 0 12px}.log:before{content:"";position:absolute;left:-23px;top:4px;width:10px;height:10px;border-radius:50%;background:var(--blue);box-shadow:0 0 0 3px #0e1730}.log.bad:before{background:var(--red)}.log.ok:before{background:var(--green)}.log .meta{color:var(--muted);font-size:12px}.log .msg{margin-top:2px}
+.rack-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:12px}.rack{border:1px solid var(--line);border-radius:14px;padding:13px;background:var(--panel);cursor:pointer}.rack:hover{border-color:var(--blue)}.rack.selected{border-color:var(--cyan);box-shadow:0 0 0 1px var(--cyan) inset}.rack h3{margin:0;font-size:15px;display:flex;justify-content:space-between}.rack .nums{display:flex;gap:8px;flex-wrap:wrap;margin:10px 0}.pill{font-size:12px;border-radius:999px;padding:2px 8px;background:#182442;color:var(--muted)}.heat{height:8px;border-radius:99px;overflow:hidden;display:flex;background:#182442}.heat i{height:100%}.evidence{background:#101d3a;border:1px solid rgba(90,167,255,.25);border-radius:12px;padding:12px;margin:10px 0}.evidence li{margin:5px 0}
+.compare-grid{grid-template-columns:1fr 1fr}.metric-big{font-size:34px;font-weight:900;margin:8px 0;font-variant-numeric:tabular-nums}.vs-bar{height:22px;border-radius:999px;overflow:hidden;display:flex;background:#182442;margin:10px 0}.vs-bar i{height:100%}.muted{color:var(--muted)}.right{text-align:right}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,monospace}.wrap-cell{white-space:normal;min-width:220px}.confusion td,.confusion th{text-align:center}.confusion td:first-child,.confusion th:first-child{text-align:left}.small{font-size:12px}.tag-code{font-family:ui-monospace,Menlo,monospace;font-size:11px;padding:2px 6px;border-radius:6px;background:#1b294a;color:#b9d4ff}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#17233f;border:1px solid var(--line);padding:10px 16px;border-radius:10px;z-index:60;display:none}
+@media(max-width:1200px){.kpis{grid-template-columns:repeat(3,1fr)}.row2,.compare-grid{grid-template-columns:1fr}.pipeline{grid-template-columns:repeat(8,minmax(120px,1fr))}}
+</style>
+</head>
+<body>
+<header>
+  <div class="head-row">
+    <div><h1>裸金属服务器装机流程仿真 · 瓶颈调度与根因归因控制台</h1>
+    <div class="sub">800 台 / 4 种机型 / 20 个机柜；DHCP、TFTP、HTTP Boot、镜像服务、ToR 交换机均为确定性仿真</div></div>
+    <div class="controls">
+      <button class="btn" id="pauseBtn">暂停</button>
+      <select class="select" id="speedSel"><option value="slow">慢速 12x</option><option value="normal" selected>常速 75x</option><option value="fast">快速 300x</option></select>
+      <button class="btn primary" id="finishBtn">立即跑完</button>
+      <button class="btn danger" id="resetStorm">重放：全部上电</button>
+      <button class="btn primary" id="resetBatch">重放：建议分批</button>
+    </div>
+  </div>
+  <nav>
+    <button class="tab active" data-page="live">实时装机</button>
+    <button class="tab" data-page="racks">机柜成片问题</button>
+    <button class="tab" data-page="plan">瓶颈与分批节奏</button>
+    <button class="tab" data-page="hardware">硬件 / RAID 预检</button>
+    <button class="tab" data-page="truth">真值逐台核对</button>
+  </nav>
+</header>
+<main>
+  <section class="page active" id="page-live"></section>
+  <section class="page" id="page-racks"></section>
+  <section class="page" id="page-plan"></section>
+  <section class="page" id="page-hardware"></section>
+  <section class="page" id="page-truth"></section>
+</main>
+<div class="drawer-mask" id="mask"></div>
+<aside class="drawer" id="drawer"><div class="drawer-head"><div id="detailTitle"></div><button class="close" id="closeDrawer">关闭</button></div><div class="drawer-body" id="detailBody"></div></aside>
+<div class="toast" id="toast"></div>
+<script>
+const $=s=>document.querySelector(s); const $$=s=>[...document.querySelectorAll(s)];
+let state=null, comp=null, hardware=[], racks=[], currentDetail=null, rackFilter=null;
+const STATUS_LABEL={pending:'等待',running:'进行中',retrying:'重试中',blocked:'阻塞',failed:'失败',success:'成功'};
+const REASON_COLORS={SWITCH_VLAN_MISSING:'var(--red)',BOOT_ORDER_WRONG:'var(--orange)',NIC_FIRMWARE_UNSUPPORTED:'var(--purple)',MEMORY_DIMM_MISSING:'var(--yellow)',DISK_MODEL_MISMATCH:'var(--yellow)',RAID_MODE_MISMATCH:'var(--orange)',TEMPLATE_NOT_APPLICABLE:'var(--orange)',DHCP_SERVICE_OVERLOAD:'var(--red)',TFTP_SERVICE_OVERLOAD:'var(--red)',HTTP_SERVICE_OVERLOAD:'var(--orange)',IMAGE_SERVICE_OVERLOAD:'var(--red)',HEALTHY:'var(--green)',IN_PROGRESS:'var(--blue)',UNKNOWN:'var(--muted)'};
+function fmtDur(ms){if(ms==null)return '-'; let s=Math.floor(ms/1000),h=Math.floor(s/3600),m=Math.floor(s%3600/60);s%=60; return h?`${h}h${String(m).padStart(2,'0')}m`:`${m}m${String(s).padStart(2,'0')}s`}
+function fmtGB(b){return (b/1e9).toFixed(2)+' GB'} function fmtMBps(b){return (b/1e6).toFixed(1)+' MB/s'}
+function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function toast(x){$('#toast').textContent=x;$('#toast').style.display='block';clearTimeout(toast.t);toast.t=setTimeout(()=>$('#toast').style.display='none',1800)}
+async function api(url,opt){const r=await fetch(url,opt); if(!r.ok)throw new Error(await r.text()); return r.json()}
+$$('.tab').forEach(b=>b.onclick=()=>{history.replaceState(null,'','#'+b.dataset.page);activatePage(b.dataset.page)});
+function activatePage(name){const btn=document.querySelector(`.tab[data-page="${name}"]`); if(!btn)return; $$('.tab').forEach(x=>x.classList.remove('active'));btn.classList.add('active');$$('.page').forEach(p=>p.classList.remove('active'));$('#page-'+name).classList.add('active'); if(name==='racks')loadRacks(); if(name==='plan')renderPlan(); if(name==='hardware')renderHardware(); if(name==='truth')renderTruth()}
+window.addEventListener('hashchange',()=>activatePage(location.hash.slice(1)));
+
+async function loadState(){try{state=await api('/api/state');renderLive(); if(currentDetail)loadDetail(currentDetail,false)}catch(e){console.error(e)}}
+function renderLive(){
+ if(!state)return; const s=state.summary, total=s.total||1;
+ const activeEl=document.activeElement;
+ const activeId=activeEl && ['q','fStage','fStatus','fRack','fProblem'].includes(activeEl.id)?activeEl.id:'';
+ const caret=activeId==='q'?activeEl.selectionStart:null;
+ const oldTable=$('#page-live .table-wrap'); const tableScroll=oldTable?oldTable.scrollTop:0;
+ $('#pauseBtn').textContent=state.paused?'继续':'暂停'; $('#speedSel').value=state.speed;
+ const active=(s.statusCounts.running||0)+(s.statusCounts.retrying||0);
+ $('#page-live').innerHTML=`
+ <div class="grid kpis">
+  ${kpi('仿真时间',fmtDur(state.timeMs),state.mode==='storm'?'orange':'cyan',state.mode==='storm'?'一次全部上电':`分批模式 · 第 ${state.activeBatch}/${state.summary.batchStartMs.length-1} 批`)}
+  ${kpi('总数',s.total,'','')}
+  ${kpi('成功',s.success,'good',`${(s.success/total*100).toFixed(1)}%`)}
+  ${kpi('进行/重试',active,'blue','')}
+  ${kpi('预检阻塞',s.blocked,'warn','硬件/配置问题')}
+  ${kpi('拥塞失败',s.failed,'bad','超过重试/窗口')}
+  ${kpi('未完成',s.incomplete,'muted',s.done?'已收敛':'运行中')}
+ </div>
+ <div class="grid row2">
+  <div class="card"><h3 class="section-title">启动流水线阶段分布 <span class="muted small">点击机器查看逐协议交互</span></h3><div class="pipeline">${stageCards(s)}</div></div>
+  <div class="card"><h3 class="section-title">归因统计</h3><div>${reasonBars(s.reasonCounts,s.reasonLabels,total)}</div></div>
+ </div>
+ <div class="card" style="margin-top:14px">
+  <h3 class="section-title">机器列表 <span class="muted small">默认每 1 秒刷新</span></h3>
+  <div class="filters">
+   <input id="q" placeholder="搜索 ID / 机柜 / MAC / IP / 型号" value="${esc(filterState.q)}"/>
+   <select class="select" id="fStage"><option value="">全部阶段</option>${state.stageOrder.map(x=>`<option value="${x}" ${filterState.stage===x?'selected':''}>${state.stageLabels[x]}</option>`).join('')}</select>
+   <select class="select" id="fStatus"><option value="">全部状态</option>${Object.entries(STATUS_LABEL).map(([k,v])=>`<option value="${k}" ${filterState.status===k?'selected':''}>${v}</option>`).join('')}</select>
+   <select class="select" id="fRack"><option value="">全部机柜</option>${[...new Set(state.machines.map(m=>m.rackId))].sort().map(r=>`<option ${filterState.rack===r?'selected':''}>${r}</option>`).join('')}</select>
+   <label class="small muted"><input type="checkbox" id="fProblem" ${filterState.problem?'checked':''}/> 只看异常/归因</label>
+  </div>
+  <div class="table-wrap" style="max-height:62vh"><table><thead><tr><th>ID</th><th>机柜/U位</th><th>机型/模板</th><th>批次</th><th>当前阶段</th><th>状态</th><th>进度/速率</th><th>归因</th><th>IP</th></tr></thead><tbody>
+  ${filteredMachines().map(m=>`<tr data-id="${m.id}" style="cursor:pointer">
+    <td class="mono">${m.id}</td><td>${m.rackId} / U${m.uPosition}<div class="muted small">${esc(m.switchPort)}</div></td>
+    <td>${esc(m.modelId)}<div class="muted small">${esc(m.templateId)}</div></td><td>${m.batch||'-'}</td>
+    <td>${m.stage==='queued'?'排队':esc(state.stageLabels[m.stage]||m.stage)}</td>
+    <td><span class="badge ${m.status}">${STATUS_LABEL[m.status]||m.status}</span>${m.attempts&&Object.keys(m.attempts).length?`<div class="muted small">重试 ${Object.values(m.attempts).reduce((a,b)=>a+b-1,0)}</div>`:''}</td>
+    <td>${progressCell(m)}</td><td>${attributionCell(m)}</td><td class="mono small">${esc(m.assignedIp||'-')}</td></tr>`).join('')}
+  </tbody></table></div>
+ </div>`;
+ bindFilters(); $$('tbody tr[data-id]').forEach(tr=>tr.onclick=()=>openDetail(tr.dataset.id));
+ const newTable=$('#page-live .table-wrap'); if(newTable)newTable.scrollTop=tableScroll;
+ if(activeId){const el=$('#'+activeId); if(el){el.focus(); if(caret!=null)try{el.setSelectionRange(caret,caret)}catch(_){}}}
+}
+const filterState={q:'',stage:'',status:'',rack:'',problem:false};
+function bindFilters(){
+ $('#q').oninput=e=>{filterState.q=e.target.value.toLowerCase();renderLive()};
+ $('#fStage').onchange=e=>{filterState.stage=e.target.value;renderLive()}; $('#fStatus').onchange=e=>{filterState.status=e.target.value;renderLive()}; $('#fRack').onchange=e=>{filterState.rack=e.target.value;rackFilter=e.target.value;renderLive()}; $('#fProblem').onchange=e=>{filterState.problem=e.target.checked;renderLive()};
+}
+function filteredMachines(){return state.machines.filter(m=>{
+ if(filterState.stage&&m.stage!==filterState.stage)return false; if(filterState.status&&m.status!==filterState.status)return false; if(filterState.rack&&m.rackId!==filterState.rack)return false; if(filterState.problem&&!['blocked','failed','retrying'].includes(m.status)&&!m.attribution)return false;
+ if(filterState.q){const hay=[m.id,m.name,m.rackId,m.mac,m.assignedIp,m.modelId,m.templateId].join(' ').toLowerCase(); if(!hay.includes(filterState.q))return false}
+ return true}).sort((a,b)=>a.id.localeCompare(b.id))}
+function kpi(label,value,cls,hint){return `<div class="card kpi"><div class="label">${label}</div><div class="value ${cls||''}">${value}</div><div class="hint">${hint||''}</div></div>`}
+function stageCards(s){const queued=s.statusCounts.pending||0; let html=`<div class="stage ${queued?'running':''}"><div class="n">${queued}</div><div class="l">排队等待上电</div></div>`;
+ for(const st of state.stageOrder){const n=s.stageCounts[st]||0; const bad=(st==='dhcp'||st==='tftp_boot'||st==='image_download')&&n>20; html+=`<div class="stage ${n?'running':''} ${bad?'bad':''}"><div class="n ${bad?'bad':''}">${n}</div><div class="l">${esc(state.stageLabels[st])}</div></div>`} return html}
+function reasonBars(counts,labels,total){const entries=Object.entries(counts).sort((a,b)=>b[1]-a[1]); const max=Math.max(1,...entries.map(x=>x[1])); return entries.map(([k,v])=>`<div class="bar-row"><div class="bar-label" title="${esc(labels[k]||k)}"><span class="tag-code">${k}</span><br>${esc(labels[k]||k)}</div><div class="bar"><i style="width:${v/max*100}%;background:${REASON_COLORS[k]||'var(--blue)'}"></i></div><div class="bar-num">${v}<br><span class="small">${(v/total*100).toFixed(1)}%</span></div></div>`).join('')}
+function progressCell(m){if(m.status==='success')return '<span class="good">100%</span>'; if(m.xfer){const p=m.xfer.doneBytes/m.xfer.totalBytes*100;return `<span class="mini-progress"><i style="width:${p}%"></i></span> <span class="small">${p.toFixed(0)}%<br>${fmtMBps(m.xfer.speedBps)}</span>`} return `<span class="mini-progress"><i style="width:${(m.progress||0)*100}%"></i></span>`}
+function attributionCell(m){if(m.attribution)return `<span class="tag-code" style="color:${REASON_COLORS[m.attribution.code]||'#bcd'}">${m.attribution.code}</span><div class="muted small">${(m.attribution.confidence*100).toFixed(0)}% · ${esc(m.attribution.scope)}</div>`; if(m.status==='success')return '<span class="good">HEALTHY</span>'; return '<span class="muted">-</span>'}
+
+async function openDetail(id){currentDetail=id;$('#mask').style.display='block';$('#drawer').classList.add('open');await loadDetail(id,true)}
+function closeDetail(){currentDetail=null;$('#mask').style.display='none';$('#drawer').classList.remove('open')}
+$('#closeDrawer').onclick=closeDetail;$('#mask').onclick=closeDetail;
+async function loadDetail(id,loading){try{const d=await api('/api/machines/'+id);renderDetail(d)}catch(e){if(loading)$('#detailBody').textContent='加载失败: '+e.message}}
+function renderDetail(d){const m=d.machine; $('#detailTitle').innerHTML=`<div><b>${m.id}</b> ${esc(m.name)} <span class="badge ${m.status}">${STATUS_LABEL[m.status]}</span><div class="sub">${esc(d.stageLabel)} · ${m.rackId} · ${esc(m.switchPort)}</div></div>`;
+ const hw=m.hardware,p=m.purchase;
+ $('#detailBody').innerHTML=`
+  <div class="grid compare-grid">
+   <div class="evidence"><b>仿真真值（埋点）</b><div style="margin-top:6px">${m.truth?`<span class="tag-code bad">${m.truth.code}</span> ${esc(m.truth.message)}`:'<span class="good">未埋设问题 / HEALTHY</span>'}</div></div>
+   <div class="evidence"><b>工具归因</b><div style="margin-top:6px">${m.attribution?`<span class="tag-code" style="color:${REASON_COLORS[m.attribution.code]}">${m.attribution.code}</span> ${esc(m.attribution.rootCause)}<div class="muted small">置信度 ${(m.attribution.confidence*100).toFixed(1)}% · scope=${m.attribution.scope} ${m.attribution.relatedId?'· '+esc(m.attribution.relatedId):''}</div>`:'<span class="muted">暂无异常归因</span>'}</div></div>
+  </div>
+  <div class="card" style="padding:12px"><h3 class="section-title">硬件与采购单 ${esc(p.orderId)}</h3>
+   <div class="kv">
+    <div class="k">机型 / SKU</div><div>${esc(hw.model)} · ${esc(p.sku)} · ${esc(p.role)}</div>
+    <div class="k">CPU / BIOS</div><div>${esc(hw.cpuModel)} · ${esc(hw.biosVersion)}</div>
+    <div class="k">内存</div><div class="${hw.memoryGb===p.expectedMemoryGb?'good':'bad'}">${hw.memoryGb}GB / ${hw.dimms.length} 条 DIMM；采购期望 ${p.expectedMemoryGb}GB / ${p.dimmCount} 条 ${esc(p.dimmModel)}</div>
+    <div class="k">硬盘</div><div>${hw.disks.length} 块；采购期望 ${p.diskCount} 块 ${esc(p.diskModel)}<br><span class="muted small">${hw.disks.map(x=>`${x.slot}:${x.model}/${x.sizeGb}GB`).join('<br>')}</span></div>
+    <div class="k">网卡</div><div>${hw.nics.map(n=>`${esc(n.model)} FW ${n.firmware} / min ${p.minNicFirmware} / ${esc(n.pxeRom)} / MAC ${esc(n.mac)}`).join('<br>')}</div>
+    <div class="k">RAID</div><div>${esc(hw.raid.controller)} FW ${esc(hw.raid.firmware)} · 模式 <b>${esc(hw.raid.personality)}</b> · 模板 ${esc(m.templateId)}</div>
+    <div class="k">网络</div><div>BMC ${esc(m.bmcIp)} · 租约 ${esc(m.assignedIp||'未获得')}</div>
+   </div>
+  </div>
+  <h3 style="margin:18px 0 6px">逐步协议交互（${d.logs.length}）</h3>
+  <div class="timeline">${d.logs.slice().reverse().map(l=>`<div class="log ${l.ok?'ok':'bad'}"><div class="meta">${fmtDur(l.t)} · ${esc(l.protocol)} · ${esc(l.direction)} ${l.endpoint?'· '+esc(l.endpoint):''} ${l.latencyMs?`· ${l.latencyMs}ms`:''}</div><div class="msg">${esc(l.message)}</div></div>`).join('')}</div>`}
+
+$('#pauseBtn').onclick=async()=>{if(!state)return; await api(state.paused?'/api/live/resume':'/api/live/pause',{method:'POST'});loadState()};
+$('#speedSel').onchange=e=>api('/api/live/speed?speed='+e.target.value,{method:'POST'});
+$('#finishBtn').onclick=async()=>{toast('正在快速跑完当前方案…');await api('/api/live/finish',{method:'POST'});loadState()};
+$('#resetStorm').onclick=()=>reset('storm'); $('#resetBatch').onclick=()=>reset('batched');
+async function reset(mode){await api('/api/live/reset?mode='+mode,{method:'POST'});filterState.stage='';filterState.status='';rackFilter=null;toast(mode==='storm'?'已重放：800 台同时上电':'已重放：按建议批次上电');loadState()}
+
+async function loadRacks(){const url='/api/racks'+(rackFilter?'?includeMachines=1':'');racks=await api(url);renderRacks()}
+function renderRacks(){if(!racks.length)return; const selected=racks.find(r=>r.id===rackFilter);
+ $('#page-racks').innerHTML=`
+ <div class="card" style="margin-bottom:14px"><h3 class="section-title">机柜成片问题视图 <span class="muted small">同机柜 ≥4 台 DHCP 超时会触发聚类；交换机会与配置真值核对</span></h3>
+ <div class="rack-grid">${racks.map(r=>{const total=r.total||1;const bad=r.blocked+r.failed;const color=r.cluster?'var(--red)':(bad?'var(--yellow)':'var(--green)');return `<div class="rack ${rackFilter===r.id?'selected':''}" data-rack="${r.id}">
+  <h3>${r.id} <span class="pill">${r.switch.id}</span></h3>
+  <div class="muted small">${r.switch.model} · ${r.uplinkGbps}G uplink ${r.switch.missingVlan?`· <span class="bad">缺 VLAN ${r.switch.missingVlan}</span>`:''}</div>
+  <div class="nums"><span class="pill good">✓ ${r.success}</span><span class="pill warn">阻 ${r.blocked}</span><span class="pill bad">败 ${r.failed}</span><span class="pill blue">动 ${r.active}</span></div>
+  <div class="heat" title="成功/阻塞/失败/进行中">${heatSeg(r.success,total,'var(--green)')}${heatSeg(r.blocked,total,'var(--yellow)')}${heatSeg(r.failed,total,'var(--red)')}${heatSeg(r.active,total,'var(--blue)')}</div>
+  <div class="small" style="margin-top:8px;color:${color}">${r.cluster?`聚类：${r.cluster.code} · ${r.cluster.affected}台 · ${(r.cluster.confidence*100).toFixed(0)}%`:(r.dominantReason?`主要原因 ${r.dominantReason}`:'暂无共性故障')}</div>
+ </div>`}).join('')}</div></div>
+ ${selected?rackDetail(selected):'<div class="card muted">选择一个机柜查看聚类证据和机器。</div>'}`;
+ $$('.rack').forEach(el=>el.onclick=async()=>{rackFilter=el.dataset.rack; racks=await api('/api/racks?includeMachines=1');renderRacks()});
+ $$('#page-racks tr[data-id]').forEach(tr=>tr.onclick=()=>openDetail(tr.dataset.id));
+}
+function heatSeg(n,total,c){return n?`<i style="width:${n/total*100}%;background:${c}"></i>`:''}
+function rackDetail(r){return `<div class="card"><h3 class="section-title">${r.id} 机柜详情 <button class="btn" id="clearRack">返回全部机柜</button></h3>
+ ${r.cluster?`<div class="evidence"><b>${r.cluster.code}</b> · 置信度 ${(r.cluster.confidence*100).toFixed(1)}% · 影响 ${r.cluster.affected}/${r.cluster.totalServers}<ul>${r.cluster.evidence.map(e=>`<li>${esc(e)}</li>`).join('')}</ul></div>`:'<p class="muted">未达到机柜级聚类阈值。</p>'}
+ <div class="table-wrap" style="max-height:52vh"><table><thead><tr><th>ID</th><th>U位/端口</th><th>阶段</th><th>状态</th><th>归因</th></tr></thead><tbody>${(r.machines||[]).map(m=>`<tr data-id="${m.id}"><td class="mono">${m.id}</td><td>U${m.uPosition} / ${esc(m.switchPort)}</td><td>${esc(state?.stageLabels[m.stage]||m.stage)}</td><td><span class="badge ${m.status}">${STATUS_LABEL[m.status]}</span></td><td>${attributionCell(m)}</td></tr>`).join('')}</tbody></table></div></div>`}
+document.addEventListener('click',e=>{if(e.target.id==='clearRack'){rackFilter=null;loadRacks()}});
+
+function renderPlan(){if(!comp)return; const p=comp.plan;
+ $('#page-plan').innerHTML=`
+ <div class="grid compare-grid">
+  ${runCompareCard('一次全部上电',comp.storm,'danger')}
+  ${runCompareCard('建议分批上电',comp.batched,'good')}
+ </div>
+ <div class="grid kpis" style="grid-template-columns:repeat(4,1fr);margin-top:14px">
+  ${kpi('建议批大小',p.batchSize,'cyan',`共 ${p.batchCount} 批`)}
+  ${kpi('上电节奏',p.powerRatePerSec+' 台/秒','blue',`同批上电窗口 ${fmtDur(p.batches[0]?.powerWindowMs)}`)}
+  ${kpi('流水线间隔',fmtDur(p.waveSpacingMs),'purple','镜像拉完即放下一批')}
+  ${kpi('预计总耗时',fmtDur(p.estimatedTotalMs),'good','含安装/重启/健康检查')}
+ </div>
+ <div class="grid row2" style="margin-top:14px">
+  <div class="card"><h3 class="section-title">容量瓶颈预测（800 台同时上电）</h3>${forecastTable(p.forecastBottlenecks)}
+   <h3 class="section-title" style="margin-top:18px">实测瓶颈指标：全开 vs 分批</h3>${observedTable(comp)}
+  </div>
+  <div class="card"><h3 class="section-title">调度依据</h3><ul>${p.rationale.map(x=>`<li style="margin:9px 0">${esc(x)}</li>`).join('')}</ul>
+   <h3 class="section-title" style="margin-top:18px">批次节奏（前 12 批）</h3><div class="table-wrap" style="max-height:420px"><table><thead><tr><th>批次</th><th>规模</th><th>预计开始</th><th>上电窗口</th><th>机柜分布</th></tr></thead><tbody>${p.batches.slice(0,12).map(b=>`<tr><td>#${b.index}</td><td>${b.size}</td><td>${fmtDur(b.startOffsetMs)}</td><td>${fmtDur(b.powerWindowMs)}</td><td class="wrap-cell small">${Object.entries(b.rackCounts).map(([k,v])=>`${k}:${v}`).join(' ')}</td></tr>`).join('')}</tbody></table></div>
+  </div>
+ </div>`}
+function runCompareCard(title,r,cls){const total=r.total||1;return `<div class="card"><h3 class="section-title">${title}</h3><div class="metric-big ${cls}">${fmtDur(r.durationMs)}</div><div class="muted">仿真收敛总耗时</div>
+ <div class="vs-bar"><i style="width:${r.success/total*100}%;background:var(--green)"></i><i style="width:${r.blocked/total*100}%;background:var(--yellow)"></i><i style="width:${r.failed/total*100}%;background:var(--red)"></i><i style="width:${r.incomplete/total*100}%;background:var(--blue)"></i></div>
+ <div class="grid" style="grid-template-columns:repeat(4,1fr);gap:8px"><div><b class="good">${r.success}</b><div class="muted small">成功</div></div><div><b class="warn">${r.blocked}</b><div class="muted small">阻塞</div></div><div><b class="bad">${r.failed}</b><div class="muted small">失败</div></div><div><b>${r.unsuccessful}</b><div class="muted small">总不成功</div></div></div>
+ <div style="margin-top:12px" class="small muted">主要原因：${Object.entries(r.reasonCounts).sort((a,b)=>b[1]-a[1]).slice(0,5).map(([k,v])=>`<span class="tag-code" style="margin:2px">${k}:${v}</span>`).join('')}</div></div>`}
+function forecastTable(bs){return `<div class="table-wrap"><table><thead><tr><th>阶段/服务</th><th>安全负载</th><th>预测负载</th><th>利用率</th><th>最早饱和</th><th>级别</th><th>说明</th></tr></thead><tbody>${bs.map(b=>`<tr><td><b>${esc(state?.stageLabels[b.stage]||b.stage)}</b><div class="muted small">${b.service}</div></td><td>${b.safeLoad.toFixed(0)}</td><td>${b.offeredLoad.toFixed(0)}</td><td class="${b.utilization>=1?'bad':b.utilization>=.75?'warn':'good'}">${(b.utilization*100).toFixed(0)}%</td><td>${fmtDur(b.firstAtMs)}</td><td><span class="badge ${b.severity==='critical'?'failed':b.severity==='watch'?'blocked':'success'}">${b.severity}</span></td><td class="wrap-cell small">${esc(b.detail)}</td></tr>`).join('')}</tbody></table></div>`}
+function observedTable(c){const rows=[...c.storm.bottlenecks];return `<div class="table-wrap"><table><thead><tr><th>服务</th><th>方案</th><th>峰值</th><th>安全线</th><th>超时</th><th>最早饱和</th><th>详情</th></tr></thead><tbody>${rows.map((b,i)=>`<tr><td rowspan="2">${b.service}</td><td class="bad">全开</td><td>${b.peakLoad.toFixed(0)}</td><td>${b.safeLoad.toFixed(0)}</td><td class="bad">${b.timeouts}</td><td>${fmtDur(b.firstAtMs)}</td><td class="wrap-cell small">${esc(b.detail)}</td></tr><tr><td class="good">分批</td><td>${c.batched.bottlenecks[i].peakLoad.toFixed(0)}</td><td>${c.batched.bottlenecks[i].safeLoad.toFixed(0)}</td><td>${c.batched.bottlenecks[i].timeouts}</td><td>${fmtDur(c.batched.bottlenecks[i].firstAtMs)}</td><td class="wrap-cell small">${esc(c.batched.bottlenecks[i].detail)}</td></tr>`).join('')}</tbody></table></div>`}
+
+async function loadHardware(){hardware=await api('/api/hardware-checks');renderHardware()}
+let hwFilter={q:'',code:''};
+function renderHardware(){const codes=[...new Set(hardware.map(x=>x.code))].sort(); const rows=hardware.filter(x=>(!hwFilter.code||x.code===hwFilter.code)&&(!hwFilter.q||[x.machineId,x.rackId,x.model,x.title,x.expected,x.actual].join(' ').toLowerCase().includes(hwFilter.q.toLowerCase())));
+ const activeEl=document.activeElement; const activeId=activeEl&&['hwq','hwcode'].includes(activeEl.id)?activeEl.id:''; const caret=activeId==='hwq'?activeEl.selectionStart:null;
+ $('#page-hardware').innerHTML=`<div class="card"><h3 class="section-title">装机前硬件 / RAID / 模板核对 <span class="muted small">发现 ${hardware.length} 项不符；这些机器会被标记且不进入装系统</span></h3>
+ <div class="filters"><input id="hwq" placeholder="搜索机器、机柜、型号、期望值..." value="${esc(hwFilter.q)}"/><select class="select" id="hwcode"><option value="">全部异常类型</option>${codes.map(c=>`<option ${hwFilter.code===c?'selected':''}>${c}</option>`).join('')}</select></div>
+ <div class="table-wrap" style="max-height:72vh"><table><thead><tr><th>机器</th><th>机柜</th><th>机型</th><th>类型</th><th>问题</th><th>期望/证据</th><th>实际</th><th>真值核对</th></tr></thead><tbody>${rows.map(x=>`<tr><td class="mono"><a href="#" data-mid="${x.machineId}" class="machine-link">${x.machineId}</a><div class="muted small">${esc(x.orderId)}</div></td><td>${x.rackId}</td><td>${esc(x.model)}</td><td><span class="tag-code">${x.code}</span></td><td class="wrap-cell">${esc(x.title)}</td><td class="wrap-cell">${esc(x.expected)}</td><td class="wrap-cell bad">${esc(x.actual)}</td><td>${x.truthMatch?'<span class="good">✓ 与埋点一致</span>':`<span class="warn">真值 ${x.truthCode}</span>`}</td></tr>`).join('')}</tbody></table></div></div>`;
+ $('#hwq').oninput=e=>{hwFilter.q=e.target.value;renderHardware()};$('#hwcode').onchange=e=>{hwFilter.code=e.target.value;renderHardware()};$$('.machine-link').forEach(a=>a.onclick=e=>{e.preventDefault();openDetail(a.dataset.mid)});
+ if(activeId){const el=$('#'+activeId); if(el){el.focus(); if(caret!=null)try{el.setSelectionRange(caret,caret)}catch(_){}}}
+}
+
+function renderTruth(){if(!comp)return; const rep=truthDataset||comp.batchAccuracy;
+ $('#page-truth').innerHTML=`<div class="grid kpis" style="grid-template-columns:repeat(4,1fr)">${kpi('核对样本',rep.total,'','')}${kpi('归因一致',rep.matched,'good',`${(rep.accuracy*100).toFixed(2)}%`)}${kpi('不一致',rep.total-rep.matched,rep.total-rep.matched?'bad':'good','')}${kpi('数据集','<select class="select" id="truthSel"><option value="batch">建议分批</option><option value="storm">全部上电</option></select>','','')}</div>
+ <div class="card"><h3 class="section-title">真值 × 归因混淆矩阵</h3>${confusion(rep)}</div>
+ <div class="card" style="margin-top:14px"><h3 class="section-title">逐台核对 <label class="small muted"><input type="checkbox" id="onlyMismatch"/> 只看不一致</label></h3><div class="table-wrap" style="max-height:62vh"><table><thead><tr><th>机器</th><th>机柜</th><th>仿真真实问题</th><th>工具归因</th><th>是否一致</th><th>阶段</th><th>状态</th></tr></thead><tbody id="truthRows"></tbody></table></div></div>`;
+ $('#truthSel').value=truthDatasetName; $('#truthSel').onchange=e=>{truthDatasetName=e.target.value;truthDataset=e.target.value==='batch'?comp.batchAccuracy:comp.stormAccuracy;renderTruth()}; $('#onlyMismatch').onchange=e=>renderTruthRows(e.target.checked); renderTruthRows(false)
+}
+let truthDataset=null,truthDatasetName='batch';
+function renderTruthRows(onlyBad){const rep=truthDataset||comp.batchAccuracy; $('#truthRows').innerHTML=rep.rows.filter(r=>!onlyBad||!r.match).map(r=>`<tr><td class="mono"><a href="#" data-mid="${r.machineId}" class="truth-link">${r.machineId}</a></td><td>${r.rackId}</td><td><span class="tag-code" style="color:${REASON_COLORS[r.truth]}">${r.truth}</span><div class="muted small wrap-cell">${esc(r.truthDetail)}</div></td><td><span class="tag-code" style="color:${REASON_COLORS[r.predicted]}">${r.predicted}</span><div class="muted small wrap-cell">${esc(r.predDetail)}</div></td><td>${r.match?'<span class="good">✓ 一致</span>':'<span class="bad">× 偏差</span>'}</td><td>${esc(state?.stageLabels[r.stage]||r.stage)}</td><td><span class="badge ${r.status}">${STATUS_LABEL[r.status]||r.status}</span></td></tr>`).join(''); $$('.truth-link').forEach(a=>a.onclick=e=>{e.preventDefault();openDetail(a.dataset.mid)})}
+function confusion(rep){const truths=Object.keys(rep.confusion).sort(); const preds=[...new Set(truths.flatMap(t=>Object.keys(rep.confusion[t])))].sort(); return `<div class="table-wrap"><table class="confusion"><thead><tr><th>真值 \\ 归因</th>${preds.map(p=>`<th>${p}</th>`).join('')}</tr></thead><tbody>${truths.map(t=>`<tr><td><span class="tag-code">${t}</span> <span class="muted">${rep.byTruth[t]}</span></td>${preds.map(p=>`<td class="${rep.confusion[t][p]?(p===t?'good':'bad'):''}">${rep.confusion[t][p]||''}</td>`).join('')}</tr>`).join('')}</tbody></table></div>`}
+
+(async function init(){comp=await api('/api/comparison'); truthDataset=comp.batchAccuracy; await loadState(); await loadHardware(); const initialPage=location.hash.slice(1); if(initialPage)activatePage(initialPage); setInterval(loadState,1000); setInterval(()=>{if($('#page-racks').classList.contains('active'))loadRacks()},2000)})();
+</script>
+</body>
+</html>
