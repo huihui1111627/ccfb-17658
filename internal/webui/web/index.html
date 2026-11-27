@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>装机流程仿真与调度</title>
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header>
+  <div class="brand">
+    <span class="logo">▦</span>
+    <div>
+      <h1>装机流程仿真与调度</h1>
+      <p id="subtitle">800 台上电 · 协议级仿真 · 归因核对</p>
+    </div>
+  </div>
+  <nav id="strategies"></nav>
+</header>
+
+<main>
+  <section id="dashboard">
+    <!-- KPI strip -->
+    <div class="kpis" id="kpis"></div>
+
+    <!-- Row: phase wall + phase histogram -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head">
+          <h2>装机阶段墙</h2>
+          <div class="scrub">
+            <input type="range" id="scrub" min="0" max="100" value="100">
+            <span id="scrub-t"></span>
+          </div>
+        </div>
+        <div id="wall" class="wall"></div>
+        <div class="legend" id="phase-legend"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>阶段分布</h2></div>
+        <div id="phase-chart" class="chart"></div>
+      </div>
+    </div>
+
+    <!-- Row: bottlenecks + rhythm -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h2>服务瓶颈(全量上电)</h2></div>
+        <div id="bottlenecks"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>分批上电节奏</h2></div>
+        <div id="rhythm"></div>
+      </div>
+    </div>
+
+    <!-- Row: comparison + attribution -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h2>方案对比</h2></div>
+        <div id="compare"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>归因核对:真值 vs 工具</h2></div>
+        <div id="scorecard"></div>
+      </div>
+    </div>
+
+    <!-- Row: cabinets -->
+    <div class="card">
+      <div class="card-head">
+        <h2>按机柜看成片问题</h2>
+        <span class="hint">点机柜看该柜全部主机</span>
+      </div>
+      <div id="cabinets" class="cabinets"></div>
+    </div>
+
+    <!-- Fault taxonomy + triage -->
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h2>按阶段归类的原因</h2></div>
+        <div id="fault-classes"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>排查负担</h2><span class="hint">成片共因 vs 个案</span></div>
+        <div id="triage"></div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-head"><h2>装机前核对结论</h2></div>
+        <div id="audit-summary"></div>
+      </div>
+      <div class="card">
+        <div class="card-head"><h2>机柜交换机状态</h2><span class="hint">成片问题的物理根源</span></div>
+        <div id="switches"></div>
+      </div>
+    </div>
+
+    <!-- Event ticker -->
+    <div class="card">
+      <div class="card-head"><h2>现场事件流</h2><span class="hint">告警与失败,按时间</span></div>
+      <div id="ticker" class="ticker"></div>
+    </div>
+  </section>
+</main>
+
+<div id="drawer" class="drawer hidden">
+  <div class="drawer-head">
+    <h2 id="drawer-title">机器详情</h2>
+    <button id="drawer-close">✕</button>
+  </div>
+  <div id="drawer-body" class="drawer-body"></div>
+</div>
+
+<script src="/app.js"></script>
+</body>
+</html>
